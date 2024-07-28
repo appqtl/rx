@@ -5,18 +5,18 @@ import (
 	"sync"
 )
 
-func NewSink(f func() EmittableSinkHandler) SinkFactory {
+func NewSink(f func() SinkHandler) SinkFactory {
 	return SinkFactoryFunc(f)
 }
 
 func Empty() SinkFactory {
-	return NewSink(func() EmittableSinkHandler {
+	return NewSink(func() SinkHandler {
 		return Sink[any]{}
 	})
 }
 
 func ForEach[T any](f func(T)) SinkFactory {
-	return NewSink(func() EmittableSinkHandler {
+	return NewSink(func() SinkHandler {
 		return SinkFunc[T](func(t T) error {
 			f(t)
 			return nil
@@ -33,7 +33,7 @@ func Printf(format string) SinkFactory {
 }
 
 func Collect[T any]() SinkFactory {
-	return NewSink(func() EmittableSinkHandler {
+	return NewSink(func() SinkHandler {
 		var mutex sync.Mutex
 		slice := make([]T, 0)
 		return Sink[T]{
@@ -53,7 +53,7 @@ func Collect[T any]() SinkFactory {
 }
 
 func Replicator() SinkFactory {
-	return NewSink(func() EmittableSinkHandler {
+	return NewSink(func() SinkHandler {
 		return Sink[any]{
 			HandlePush: func(t any, inlet EmittableInlet) {
 				inlet.Emit(t)

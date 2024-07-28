@@ -12,12 +12,6 @@ var (
 )
 
 type SinkHandler interface {
-	OnPull(any, Inlet)
-	OnError(error, Inlet)
-	OnComplete(Inlet)
-}
-
-type EmittableSinkHandler interface {
 	OnPush(any, EmittableInlet)
 	OnError(error, EmittableInlet)
 	OnComplete(EmittableInlet)
@@ -95,12 +89,12 @@ type SinkFactory interface {
 	Create(Pipe) Runnable
 }
 
-type SinkFactoryFunc func() EmittableSinkHandler
+type SinkFactoryFunc func() SinkHandler
 
 func (sff SinkFactoryFunc) Create(pipe Pipe) Runnable {
 	emitter := newEmitter(pipe)
 
-	go func(handler EmittableSinkHandler, pipe Pipe, inlet EmittableInlet) {
+	go func(handler SinkHandler, pipe Pipe, inlet EmittableInlet) {
 		defer pipe.Close()
 		for evt := range pipe.Events() {
 			switch evt.Type() {
