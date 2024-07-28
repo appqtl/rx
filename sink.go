@@ -89,6 +89,12 @@ type SinkFactory interface {
 	Create(Pipe) Runnable
 }
 
+type inlineSinkFactory func(Pipe) Runnable
+
+func (isf inlineSinkFactory) Create(pipe Pipe) Runnable {
+	return isf(pipe)
+}
+
 type SinkFactoryFunc func() SinkHandler
 
 func (sff SinkFactoryFunc) Create(pipe Pipe) Runnable {

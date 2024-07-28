@@ -54,6 +54,12 @@ type SourceFactory interface {
 	Create() Pipe
 }
 
+type inlineSourceFactory func() Pipe
+
+func (isf inlineSourceFactory) Create() Pipe {
+	return isf()
+}
+
 type SourceFactoryFunc func() SourceHandler
 
 func (sff SourceFactoryFunc) Create() Pipe {
@@ -75,6 +81,7 @@ func (sff SourceFactoryFunc) Create() Pipe {
 
 type SourceBuilder interface {
 	SourceFactory
+	Via(FlowFactory) SourceBuilder
 	To(SinkFactory)
 	RunWith(SinkFactory) Runnable
 }
@@ -85,10 +92,18 @@ func (sbf SourceBuilderFunc) Create() Pipe {
 	return sbf().Create()
 }
 
-func (sbf SourceBuilderFunc) To(builder SinkFactory) {
-	sbf.RunWith(builder).Run()
+func (sbf SourceBuilderFunc) Via(factory FlowFactory) SourceBuilder {
+	return SourceBuilderFunc(func() SourceFactory {
+		return inlineSourceFactory(func() Pipe {
+			return factory.Create(sbf.Create())
+		})
+	})
 }
 
-func (sbf SourceBuilderFunc) RunWith(builder SinkFactory) Runnable {
-	return builder.Create(sbf.Create())
+func (sbf SourceBuilderFunc) To(factory SinkFactory) {
+	sbf.RunWith(factory).Run()
+}
+
+func (sbf SourceBuilderFunc) RunWith(factory SinkFactory) Runnable {
+	return factory.Create(sbf.Create())
 }

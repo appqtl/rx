@@ -43,6 +43,16 @@ type Inlet interface {
 	Cancel()
 }
 
+type IOlet interface {
+	Inlet
+	Outlet
+}
+
+type iolet struct {
+	Inlet
+	Outlet
+}
+
 type Pipe interface {
 	Inlet
 	Events() <-chan Event
@@ -56,8 +66,8 @@ type pipe struct {
 
 func newPipe() pipe {
 	return pipe{
-		commands: make(chan Command),  // TODO maybe we need a capacity
-		events:   make(chan Event), // TODO maybe we need a capacity
+		commands: make(chan Command), // TODO maybe we need a capacity
+		events:   make(chan Event),   // TODO maybe we need a capacity
 	}
 }
 
