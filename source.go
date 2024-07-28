@@ -75,10 +75,20 @@ func (sff SourceFactoryFunc) Create() Pipe {
 
 type SourceBuilder interface {
 	SourceFactory
+	To(SinkFactory)
+	RunWith(SinkFactory) Runnable
 }
 
 type SourceBuilderFunc func() SourceFactory
 
 func (sbf SourceBuilderFunc) Create() Pipe {
 	return sbf().Create()
+}
+
+func (sbf SourceBuilderFunc) To(builder SinkFactory) {
+	sbf.RunWith(builder).Run()
+}
+
+func (sbf SourceBuilderFunc) RunWith(builder SinkFactory) Runnable {
+	return builder.Create(sbf.Create())
 }
