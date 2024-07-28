@@ -7,7 +7,7 @@ GOTIDY=$(GOMOD) tidy
 GOTOOL=$(GOCMD) tool
 
 .PHONY: test
-test: tidy
+test:
 	$(GOTEST) -coverprofile cover.out -v ./...
 
 .PHONY: tidy
