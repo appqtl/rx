@@ -10,30 +10,23 @@ type SourceHandler interface {
 	OnCancel(Outlet)
 }
 
-type Source[T any] struct {
-	Pull   func() (T, error)
-	Cancel func()
+type Source struct {
+	HandlePull   func(outlet Outlet)
+	HandleCancel func(outlet Outlet)
 }
 
-func (src Source[T]) OnPull(outlet Outlet) {
-	if f := src.Pull; f != nil {
-		t, err := f()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				outlet.Complete()
-				return
-			}
-			outlet.Error(err)
-			return
-		}
-		outlet.Push(t)
+func (src Source) OnPull(outlet Outlet) {
+	if f := src.HandlePull; f != nil {
+		f(outlet)
+		return
 	}
 	outlet.Complete()
 }
 
-func (src Source[T]) OnCancel(outlet Outlet) {
-	if f := src.Cancel; f != nil {
-		f()
+func (src Source) OnCancel(outlet Outlet) {
+	if f := src.HandleCancel; f != nil {
+		f(outlet)
+		return
 	}
 	outlet.Complete()
 }
