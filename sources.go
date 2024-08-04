@@ -42,3 +42,16 @@ func Sequence[T Number](startWith T) SourceBuilder {
 		})
 	})
 }
+
+func ChanSource[T any](channel <-chan T) SourceBuilder {
+	return NewSource(func() SourceHandler {
+		return SourceFunc[T](func() (T, error) {
+			t, open := <-channel
+			if !open {
+				var t0 T
+				return t0, io.EOF
+			}
+			return t, nil
+		})
+	})
+}
