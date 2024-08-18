@@ -166,8 +166,8 @@ func (fff FlowFactoryFunc) Create(pipe Pipe) Pipe {
 
 type FlowBuilder interface {
 	FlowFactory
-	Via(FlowFactory) FlowBuilder
-	To(SinkFactory) SinkFactory
+	Via(any) FlowBuilder
+	To(any) SinkFactory
 }
 
 type FlowBuilderFunc func() FlowFactory
@@ -176,16 +176,16 @@ func (fbf FlowBuilderFunc) Create(pipe Pipe) Pipe {
 	return fbf().Create(pipe)
 }
 
-func (fbf FlowBuilderFunc) Via(factory FlowFactory) FlowBuilder {
+func (fbf FlowBuilderFunc) Via(a any) FlowBuilder {
 	return FlowBuilderFunc(func() FlowFactory {
 		return inlineFlowFactory(func(pipe Pipe) Pipe {
-			return factory.Create(fbf().Create(pipe))
+			return FlowOf(a).Create(fbf().Create(pipe))
 		})
 	})
 }
 
-func (fbf FlowBuilderFunc) To(factory SinkFactory) SinkFactory {
+func (fbf FlowBuilderFunc) To(a any) SinkFactory {
 	return inlineSinkFactory(func(pipe Pipe) Runnable {
-		return factory.Create(fbf().Create(pipe))
+		return SinkOf(a).Create(fbf().Create(pipe))
 	})
 }

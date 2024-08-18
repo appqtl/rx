@@ -9,6 +9,20 @@ func NewSink(f func() SinkHandler) SinkFactory {
 	return SinkFactoryFunc(f)
 }
 
+func SinkOf(a any) SinkFactory {
+	switch st := a.(type) {
+	case SinkFactory:
+		return st
+	case func() SinkHandler:
+		return NewSink(st)
+	default:
+		if sf, ok := isSinkFunc(a); ok {
+			return sf
+		}
+		return Empty() // TODO emit an error instead of emptySink
+	}
+}
+
 func Empty() SinkFactory {
 	return NewSink(func() SinkHandler {
 		return Sink[any]{}

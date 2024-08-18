@@ -1,6 +1,7 @@
 package rx
 
 import (
+	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -12,6 +13,34 @@ func NewFlow[T, K any](f func(T) (K, error)) FlowBuilder {
 			return FlowFunc[T, K](f)
 		})
 	})
+}
+
+func FlowOf(a any) FlowBuilder {
+	switch ft := a.(type) {
+	case FlowBuilder:
+		return ft
+	case FlowFactory:
+		return FlowBuilderFunc(func() FlowFactory {
+			return ft
+		})
+	case func() FlowFactory:
+		return FlowBuilderFunc(ft)
+	default:
+		if factory, ok := isFlowFunc(a); ok {
+			return FlowBuilderFunc(func() FlowFactory {
+				return factory
+			})
+		}
+		return FlowBuilderFunc(func() FlowFactory {
+			return FlowFactoryFunc(func() FlowHandler {
+				return Flow[any]{
+					HandlePull: func(i IOlet) {
+						i.Error(fmt.Errorf("unsupported flow-func %T", ft))
+					},
+				}
+			})
+		})
+	}
 }
 
 func Map[T, K any](f func(T) K) FlowBuilder {
