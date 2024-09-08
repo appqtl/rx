@@ -81,29 +81,43 @@ func (sff SourceFactoryFunc) Create() Pipe {
 
 type SourceBuilder interface {
 	SourceFactory
-	Via(any) SourceBuilder
+	Builder[SourceBuilder]
+	// Via(any) SourceBuilder
 	To(any)
 	RunWith(any) Runnable
 }
 
-type SourceBuilderFunc func() SourceFactory
+type SourceConnector func() SourceFactory
 
-func (sbf SourceBuilderFunc) Create() Pipe {
-	return sbf().Create()
+func (sc SourceConnector) Create() Pipe {
+	return sc().Create()
 }
 
-func (sbf SourceBuilderFunc) Via(a any) SourceBuilder {
+func (sc SourceConnector) Via(a any) SourceBuilder {
 	return SourceBuilderFunc(func() SourceFactory {
 		return inlineSourceFactory(func() Pipe {
-			return FlowOf(a).Create(sbf.Create())
+			return FlowOf(a).Create(sc.Create())
 		})
 	})
 }
 
-func (sbf SourceBuilderFunc) To(a any) {
-	sbf.RunWith(a).Run()
+type sourceBuilder struct {
+	SourceFactory
+	Builder[SourceBuilder]
 }
 
-func (sbf SourceBuilderFunc) RunWith(a any) Runnable {
-	return SinkOf(a).Create(sbf.Create())
+func SourceBuilderFunc(f func() SourceFactory) SourceBuilder {
+	sourceConnector := SourceConnector(f)
+	return sourceBuilder{
+		sourceConnector,
+		builder[SourceBuilder]{sourceConnector},
+	}
+}
+
+func (sb sourceBuilder) To(a any) {
+	sb.RunWith(a).Run()
+}
+
+func (sb sourceBuilder) RunWith(a any) Runnable {
+	return SinkOf(a).Create(sb.Create())
 }

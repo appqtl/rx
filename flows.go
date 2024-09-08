@@ -1,7 +1,6 @@
 package rx
 
 import (
-	"fmt"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -26,19 +25,12 @@ func FlowOf(a any) FlowBuilder {
 	case func() FlowFactory:
 		return FlowBuilderFunc(ft)
 	default:
-		if factory, ok := isFlowFunc(a); ok {
-			return FlowBuilderFunc(func() FlowFactory {
-				return factory
-			})
+		factory, err := isFlowFunc(a)
+		if err != nil {
+			panic(err)
 		}
 		return FlowBuilderFunc(func() FlowFactory {
-			return FlowFactoryFunc(func() FlowHandler {
-				return Flow[any]{
-					HandlePull: func(i IOlet) {
-						i.Error(fmt.Errorf("unsupported flow-func %T", ft))
-					},
-				}
-			})
+			return factory
 		})
 	}
 }

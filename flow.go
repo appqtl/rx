@@ -170,22 +170,35 @@ type FlowBuilder interface {
 	To(any) SinkFactory
 }
 
-type FlowBuilderFunc func() FlowFactory
+type FlowConnector func() FlowFactory
 
-func (fbf FlowBuilderFunc) Create(pipe Pipe) Pipe {
-	return fbf().Create(pipe)
+func (fc FlowConnector) Create(pipe Pipe) Pipe {
+	return fc().Create(pipe)
 }
 
-func (fbf FlowBuilderFunc) Via(a any) FlowBuilder {
+func (fc FlowConnector) Via(a any) FlowBuilder {
 	return FlowBuilderFunc(func() FlowFactory {
 		return inlineFlowFactory(func(pipe Pipe) Pipe {
-			return FlowOf(a).Create(fbf().Create(pipe))
+			return FlowOf(a).Create(fc.Create(pipe))
 		})
 	})
 }
 
-func (fbf FlowBuilderFunc) To(a any) SinkFactory {
+type flowBuilder struct {
+	FlowFactory
+	Builder[FlowBuilder]
+}
+
+func FlowBuilderFunc(f func() FlowFactory) FlowBuilder {
+	flowConnector := FlowConnector(f)
+	return flowBuilder{
+		flowConnector,
+		builder[FlowBuilder]{flowConnector},
+	}
+}
+
+func (fb flowBuilder) To(a any) SinkFactory {
 	return inlineSinkFactory(func(pipe Pipe) Runnable {
-		return SinkOf(a).Create(fbf().Create(pipe))
+		return SinkOf(a).Create(fb.Create(pipe))
 	})
 }

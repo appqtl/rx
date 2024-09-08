@@ -5,12 +5,12 @@ import (
 	"reflect"
 )
 
-func isSinkFunc(a any) (SinkFactory, bool) {
+func isSinkFunc(a any) (SinkFactory, error) {
 	valA := reflect.ValueOf(a)
+	typeA := valA.Type()
 	switch rxType(valA.Type()) {
 	case RX_TYPE_SINK_FUNC:
 		return SinkFactoryFunc(func() SinkHandler {
-			typeA := valA.Type()
 			typeParam := typeA.In(0)
 			return SinkFunc[any](func(x any) error {
 				typeX := reflect.TypeOf(x)
@@ -23,10 +23,9 @@ func isSinkFunc(a any) (SinkFactory, bool) {
 				}
 				return fmt.Errorf("flow: expect type %v got %v", typeParam, typeX)
 			})
-		}), true
+		}), nil
 	case RX_TYPE_SINK_FUNC_NO_ERROR:
 		return SinkFactoryFunc(func() SinkHandler {
-			typeA := valA.Type()
 			typeParam := typeA.In(0)
 			return SinkFunc[any](func(x any) error {
 				typeX := reflect.TypeOf(x)
@@ -36,7 +35,7 @@ func isSinkFunc(a any) (SinkFactory, bool) {
 				}
 				return fmt.Errorf("flow: expect type %v got %v", typeParam, typeX)
 			})
-		}), true
+		}), nil
 	}
-	return nil, false
+	return nil, fmt.Errorf("%v is not a valid sink-func of type func[T any](T) error or func[T any](T)", typeA)
 }

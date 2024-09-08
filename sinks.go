@@ -16,10 +16,11 @@ func SinkOf(a any) SinkFactory {
 	case func() SinkHandler:
 		return NewSink(st)
 	default:
-		if sf, ok := isSinkFunc(a); ok {
-			return sf
+		sf, err := isSinkFunc(a)
+		if err != nil {
+			panic(err)
 		}
-		return Empty() // TODO emit an error instead of emptySink
+		return sf
 	}
 }
 
